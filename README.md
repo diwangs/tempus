@@ -11,7 +11,7 @@
     - Link delay
 
 ## Bounded Reachability 
-Given network properties compute the probability of a a packet from node `X` reaching node `Y` in under `T` time unit
+Given network properties, compute the probability of a packet from node `X` reaching node `Y` in under `T` time unit
 
 ## How To Run
 - Download UPPAAL 
