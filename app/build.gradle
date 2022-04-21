@@ -16,21 +16,27 @@ repositories {
     mavenCentral()
 }
 
+def uppaalRootPath = property('uppaalRootPath')
+
 dependencies {
     // Use JUnit Jupiter for testing.
     testImplementation 'org.junit.jupiter:junit-jupiter:5.7.2'
 
     // This dependency is used by the application.
     implementation 'com.google.guava:guava:30.1.1-jre'
-    implementation files('../libs/model.jar') // UPPAAL
+    implementation group: 'com.googlecode.json-simple', name: 'json-simple', version: '1.1.1'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.3'
+    implementation files("$uppaalRootPath/lib/model.jar")
     
-    runtimeOnly files('../libs/freehep-graphicsbase.jar')
-    runtimeOnly files('../libs/swixml.jar')
-    runtimeOnly files('../libs/uppaal.jar')
+    // Runtime dependency
+    runtimeOnly files("$uppaalRootPath/lib/freehep-graphicsbase.jar")
+    runtimeOnly files("$uppaalRootPath/lib/swixml.jar")
+    runtimeOnly files("$uppaalRootPath/uppaal.jar")
 }
 
 application {
     // Define the main class for the application.
+    applicationDefaultJvmArgs = ["-DuppaalRootPath=$uppaalRootPath"]
     mainClass = 'tempus.App'
 }
 

@@ -6,7 +6,7 @@ import com.uppaal.model.core2.Edge;
 import com.uppaal.model.core2.Location;
 import com.uppaal.model.core2.Property;
 
-public class Link {
+public class Linkz {
 
     public enum LKind {
         name, init, urgent, committed, invariant, exponentialrate, comments
@@ -112,12 +112,57 @@ public class Link {
             "ent_id_t temp_src_eid;"
         );
 
-        // First location
         Location l0 = addLocation(t, "idle", null, 0, 0);
         l0.setProperty("init", true);
+        Location l1 = addLocation(t, "on_link", null, 10, 0);
+        l1.setProperty("invariant", "t<5");
+        Location l2 = addLocation(t, "success", null, 10, 0);
+        l2.setProperty("invariant", "t<2");
+        Location l3 = addLocation(t, "drop", null, 10, 0);
+        l3.setProperty("invariant", "t<2");
 
-        // Location l1 = addLocation(t, "on_link", null, 10, 0);
-        // l1.setProperty(arg0, arg1)
+        Edge e1 = addEdge(t, l0, l1, null, "appr[pid][eid]?", "temp_pid = pid, t = 0");
+        e1.setProperty("select", "pid : pkt_id_t");
+        // TODO: probability
+        addEdge(t, l2, l0, "t >= 1", "leave[temp_pid][eid]!", "t = 0");
+        addEdge(t, l3, l0, "t >= 1", null, "t = 0");
+
+        doc.insert(t, null);
+        System.out.println("Link created");
+
+        return t;
+    }
+
+    public static Template createSamplePacket(Document doc) {
+        Template t = doc.createTemplate(); 
+		t.setProperty("name", "PacketJava");
+        t.setProperty("parameter", "const pkt_id_t pid, ent_id_t src, ent_id_t dst");
+		t.setProperty("declaration", 
+            "clock t;" +
+            "pkt_id_t temp_pid;" +
+            "ent_id_t temp_src_eid;"
+        );
+
+        // Locations
+        Location l0 = addLocation(t, "on_sender", null, 0, 0);
+        l0.setProperty("init", true);
+        Location l01 = addLocation(t, "out_sender", null, 0, 0);
+        l01.setProperty("commited", true);
+        Location l1 = addLocation(t, "on_link", null, 10, 0);
+        Location l12 = addLocation(t, "out_link", null, 0, 0);
+        l12.setProperty("commited", true);
+        Location l2 = addLocation(t, "on_switch", null, 10, 0);
+        Location l21 = addLocation(t, "out_switch", null, 0, 0);
+        l21.setProperty("commited", true);
+        Location l13 = addLocation(t, "out_link_receiver", null, 0, 0);
+        l13.setProperty("commited", true);
+        Location l3 = addLocation(t, "on_receiver", null, 10, 0);
+
+        Edge e1 = addEdge(t, l0, l1, null, "appr[pid][eid]?", "temp_pid = pid, t = 0");
+        e1.setProperty("select", "pid : pkt_id_t");
+
+        addEdge(t, l2, l0, "t >= 1", "leave[temp_pid][eid]!", "t = 0");
+        addEdge(t, l3, l0, "t >= 1", null, "t = 0");
 
         doc.insert(t, null);
         System.out.println("Link created");

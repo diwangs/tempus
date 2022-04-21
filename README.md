@@ -14,7 +14,8 @@
 Given network properties, compute the probability of a packet from node `X` reaching node `Y` in under `T` time unit
 
 ## How To Run
-- Download UPPAAL 
-- Edit server path in `app/src/main/java/tempus/App.java` to adjust with your OS and UPPAAL directory
-- Edit model path in the same file
+- Download and extract UPPAAL (version 4.1.26-1)
+- Edit `uppaalRootPath` in `gradle.properties`
+- (Windows only?) Edit server path in `app/src/main/java/tempus/App.java$121` to adjust with your OS
+- Adjust the topology file in `config/test.json` accordingly (file name is hardcoded for now)
 - Run `./gradlew run`

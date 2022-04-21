@@ -1,0 +1,13 @@
+{
+    "routers": [
+        {"name": "S1", "avgQDelay": 5},
+        {"name": "S2", "avgQDelay": 6},
+        {"name": "S3", "avgQDelay": 7},
+        {"name": "S4", "avgQDelay": 109}
+    ],
+    "links": [
+        {"u": "S1", "v": "S2", "delay": 10},
+        {"u": "S3", "v": "S2", "delay": 11}
+    ],
+    "intent": {"path": ["S1", "S2", "S3"], "threshold": 40}
+}

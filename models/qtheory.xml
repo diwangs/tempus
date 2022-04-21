@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE nta PUBLIC '-//Uppaal Team//DTD Flat System 1.1//EN' 'http://www.it.uu.se/research/group/darts/uppaal/flat-1_2.dtd'>
+<nta>
+	<declaration>// Place global declarations here.</declaration>
+	<template>
+		<name x="5" y="5">Network</name>
+		<declaration>// Place local declarations here.
+clock t;
+clock total;
+
+// Link delay must be constant?</declaration>
+		<location id="id0" x="-17" y="212">
+			<name x="-27" y="178">on_host</name>
+			<label kind="exponentialrate" x="-27" y="246">1</label>
+		</location>
+		<location id="id1" x="187" y="212">
+			<name x="177" y="178">on_link_1</name>
+			<label kind="invariant" x="177" y="229">t &lt;= 10</label>
+		</location>
+		<location id="id2" x="416" y="212">
+			<name x="406" y="178">on_router_1</name>
+			<label kind="exponentialrate" x="408" y="238">1</label>
+		</location>
+		<location id="id3" x="603" y="212">
+			<name x="593" y="178">on_link_2</name>
+			<label kind="invariant" x="593" y="229">t &lt;= 5</label>
+		</location>
+		<location id="id4" x="799" y="212">
+			<name x="789" y="178">on_receiver</name>
+		</location>
+		<init ref="id0"/>
+		<transition>
+			<source ref="id3"/>
+			<target ref="id4"/>
+			<label kind="guard" x="688" y="212">t &gt;= 5</label>
+			<label kind="assignment" x="688" y="229">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id2"/>
+			<target ref="id3"/>
+			<label kind="assignment" x="501" y="229">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id1"/>
+			<target ref="id2"/>
+			<label kind="guard" x="280" y="221">t &gt;= 10</label>
+			<label kind="assignment" x="280" y="246">t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id0"/>
+			<target ref="id1"/>
+			<label kind="assignment" x="68" y="229">t = 0</label>
+		</transition>
+	</template>
+	<system>// Place template instantiations here.
+Process = Network();
+// List one or more processes to be composed into a system.
+system Process;
+    </system>
+	<queries>
+		<query>
+			<formula>Pr[Process.t &lt;= 16](&lt;&gt; Process.on_receiver)</formula>
+			<comment></comment>
+		</query>
+	</queries>
+</nta>

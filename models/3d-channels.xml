@@ -22,10 +22,8 @@ const int E = 30; // # entity
 typedef int[0,N-1] pkt_id_t;
 typedef int[0,E-1] ent_id_t;
 
-broadcast chan leave[N][E], appr[N][E], drop[N];
-
-// leave[pid][ent] -&gt; packet pid is leaving entity ent
-// appr[pid][ent] -&gt; packet pid is approaching entity ent</declaration>
+broadcast chan leave[N][E][E], appr[N][E][E], drop[N];
+</declaration>
 	<template>
 		<name>Link</name>
 		<parameter>const ent_id_t eid, ent_id_t endpoint1, ent_id_t endpoint2, int success_odds, int fail_odds</parameter>
@@ -55,7 +53,7 @@ ent_id_t temp_src_eid;</declaration>
 			<source ref="id2"/>
 			<target ref="id0"/>
 			<label kind="guard" x="-527" y="-195">t&gt;=1</label>
-			<label kind="synchronisation" x="-527" y="-178">leave[temp_pid][eid]!</label>
+			<label kind="synchronisation" x="-527" y="-178">leave[temp_pid][eid][temp_src_eid == endpoint1 ? endpoint2 : endpoint1]!</label>
 			<label kind="assignment" x="-527" y="-161">t=0</label>
 			<nail x="-544" y="-127"/>
 		</transition>
@@ -85,10 +83,10 @@ ent_id_t temp_src_eid;</declaration>
 		<transition>
 			<source ref="id0"/>
 			<target ref="id1"/>
-			<label kind="select" x="-517" y="-93">pid : pkt_id_t</label>
-			<label kind="synchronisation" x="-518" y="-76">appr[pid][eid]?</label>
-			<label kind="assignment" x="-518" y="-59">temp_pid=pid,
-t=0</label>
+			<label kind="select" x="-519" y="-93">pid : pkt_id_t,
+src_eid: ent_id_t</label>
+			<label kind="synchronisation" x="-519" y="-59">leave[pid][src_eid][eid]?</label>
+			<label kind="assignment" x="-519" y="-42">temp_pid=pid,temp_src_eid=src_eid, t=0</label>
 		</transition>
 	</template>
 	<template>
@@ -218,8 +216,9 @@ pkt_id_t tailD()
 			<source ref="id5"/>
 			<target ref="id7"/>
 			<label kind="guard" x="187" y="-187">t &gt;= 1 &amp;&amp; len - 1 == 0</label>
-			<label kind="synchronisation" x="187" y="-170">leave[front()][eid]!</label>
+			<label kind="synchronisation" x="187" y="-170">leave[front()][eid][getPort(frontD())]!</label>
 			<label kind="assignment" x="187" y="-153">dequeue(),
+dequeueD(),
 t=0</label>
 			<nail x="-76" y="-212"/>
 			<nail x="714" y="-212"/>
@@ -228,8 +227,9 @@ t=0</label>
 			<source ref="id5"/>
 			<target ref="id5"/>
 			<label kind="guard" x="-348" y="-357">t &gt;= 1 &amp;&amp; len - 1 &gt; 0</label>
-			<label kind="synchronisation" x="-348" y="-340">leave[front()][eid]!</label>
+			<label kind="synchronisation" x="-348" y="-340">leave[front()][eid][getPort(frontD())]!</label>
 			<label kind="assignment" x="-348" y="-323">dequeue(),
+dequeueD(),
 t=0</label>
 			<nail x="-170" y="-416"/>
 			<nail x="-357" y="-416"/>
@@ -239,16 +239,18 @@ t=0</label>
 		<transition>
 			<source ref="id7"/>
 			<target ref="id6"/>
-			<label kind="select" x="365" y="-391">pid : pkt_id_t</label>
-			<label kind="synchronisation" x="365" y="-374">appr[pid][eid]?</label>
+			<label kind="select" x="365" y="-408">pid : pkt_id_t,
+dst: ent_id_t</label>
+			<label kind="synchronisation" x="365" y="-374">appr[pid][dst][eid]?</label>
 			<label kind="assignment" x="365" y="-357">temp_pid=pid,
+temp_dst=dst,
 t=0</label>
 		</transition>
 		<transition>
 			<source ref="id6"/>
 			<target ref="id5"/>
 			<label kind="guard" x="-8" y="-297">len + 1 &lt;= qsize</label>
-			<label kind="assignment" x="-8" y="-280">enqueue(temp_pid)</label>
+			<label kind="assignment" x="-8" y="-280">enqueue(temp_pid), enqueueD(temp_dst)</label>
 			<nail x="306" y="-255"/>
 			<nail x="-34" y="-255"/>
 		</transition>
@@ -262,9 +264,11 @@ t=0</label>
 		<transition>
 			<source ref="id5"/>
 			<target ref="id6"/>
-			<label kind="select" x="153" y="-391">pid : pkt_id_t</label>
-			<label kind="synchronisation" x="153" y="-374">appr[pid][eid]?</label>
-			<label kind="assignment" x="153" y="-357">temp_pid=pid</label>
+			<label kind="select" x="144" y="-408">pid : pkt_id_t,
+dst: ent_id_t</label>
+			<label kind="synchronisation" x="144" y="-374">appr[pid][dst][eid]?</label>
+			<label kind="assignment" x="144" y="-357">temp_pid=pid,
+temp_dst=dst</label>
 		</transition>
 	</template>
 	<template>
@@ -280,7 +284,9 @@ clock total;
 int[0,2] type;
 
 // Forwarding
-ent_id_t cur_loc;
+ent_id_t prev_hop;
+ent_id_t next_hop;
+ent_id_t final_hop;
 
 ent_id_t getPort(ent_id_t cur_loc, ent_id_t dst) {
     ent_id_t forwarding[5]; // forwarding[i] == next_hop to reach node i
@@ -315,164 +321,129 @@ ent_id_t getPort(ent_id_t cur_loc, ent_id_t dst) {
         forwarding[2] = 14;
         forwarding[3] = 12;
         forwarding[4] = 13;
-    } else if (cur_loc == 10) {
-        forwarding[1] = 1;
-        forwarding[2] = 20;
-        forwarding[3] = 20;
-        forwarding[4] = 20;
-    } else if (cur_loc == 11) {
-        forwarding[1] = 20;
-        forwarding[2] = 2;
-        forwarding[3] = 20;
-        forwarding[4] = 20;
-    } else if (cur_loc == 12) {
-        forwarding[1] = 21;
-        forwarding[2] = 21;
-        forwarding[3] = 3;
-        forwarding[4] = 21;
-    } else if (cur_loc == 13) {
-        forwarding[1] = 21;
-        forwarding[2] = 21;
-        forwarding[3] = 21;
-        forwarding[4] = 4;
-    } else if (cur_loc == 14) {
-        forwarding[1] = 20;
-        forwarding[2] = 20;
-        forwarding[3] = 21;
-        forwarding[4] = 21;
     } 
 
     return forwarding[dst];
 }</declaration>
-		<location id="id8" x="484" y="-212">
-			<committed/>
-		</location>
-		<location id="id9" x="102" y="-433">
-			<committed/>
-		</location>
-		<location id="id10" x="-340" y="-212">
-			<committed/>
-		</location>
-		<location id="id11" x="59" y="-212">
+		<location id="id8" x="59" y="-212">
 			<name x="76" y="-238">on_link</name>
 		</location>
-		<location id="id12" x="59" y="-646">
+		<location id="id9" x="59" y="-646">
 			<name x="34" y="-689">on_switch</name>
 		</location>
-		<location id="id13" x="8" y="-433">
+		<location id="id10" x="8" y="-433">
 			<committed/>
 		</location>
-		<location id="id14" x="-714" y="-212">
+		<location id="id11" x="-714" y="-212">
 			<name x="-781" y="-195">on_sender</name>
 		</location>
-		<location id="id15" x="850" y="-212">
+		<location id="id12" x="850" y="-212">
 			<name x="867" y="-195">on_receiver</name>
 		</location>
-		<init ref="id14"/>
+		<init ref="id11"/>
 		<transition>
 			<source ref="id8"/>
-			<target ref="id15"/>
-			<label kind="synchronisation" x="544" y="-238">appr[pid][getPort(cur_loc, dst)]!</label>
+			<target ref="id12"/>
+			<label kind="select" x="340" y="-178">temp_prev_hop : ent_id_t</label>
+			<label kind="guard" x="340" y="-161">t &gt;= 1</label>
+			<label kind="synchronisation" x="340" y="-144">leave[pid][temp_prev_hop][dst]?</label>
+			<label kind="assignment" x="340" y="-127">prev_hop = temp_prev_hop,
+t = 0</label>
+		</transition>
+		<transition>
+			<source ref="id9"/>
+			<target ref="id8"/>
+			<label kind="select" x="153" y="-467">temp_prev_hop : ent_id_t,
+temp_next_hop : ent_id_t</label>
+			<label kind="guard" x="153" y="-433">t &gt;= 1</label>
+			<label kind="synchronisation" x="153" y="-416">leave[pid][temp_prev_hop][temp_next_hop]?</label>
+			<label kind="assignment" x="153" y="-399">prev_hop = temp_prev_hop,
+next_hop = temp_next_hop</label>
+			<nail x="119" y="-433"/>
 		</transition>
 		<transition>
 			<source ref="id11"/>
 			<target ref="id8"/>
-			<label kind="guard" x="136" y="-187">getPort(getPort(cur_loc, dst), dst) == dst</label>
-			<label kind="synchronisation" x="136" y="-170">leave[pid][getPort(cur_loc, dst)]?</label>
-			<label kind="assignment" x="136" y="-153">cur_loc = getPort(cur_loc, dst)</label>
-		</transition>
-		<transition>
-			<source ref="id9"/>
-			<target ref="id11"/>
-			<label kind="synchronisation" x="110" y="-331">appr[pid][getPort(cur_loc, dst)]!</label>
-		</transition>
-		<transition>
-			<source ref="id12"/>
-			<target ref="id9"/>
-			<label kind="synchronisation" x="110" y="-544">leave[pid][getPort(cur_loc, dst)]?</label>
-			<label kind="assignment" x="110" y="-527">cur_loc = getPort(cur_loc, dst)</label>
-		</transition>
-		<transition>
-			<source ref="id10"/>
-			<target ref="id11"/>
-			<label kind="synchronisation" x="-246" y="-238">appr[pid][getPort(cur_loc, dst)]!</label>
-		</transition>
-		<transition>
-			<source ref="id14"/>
-			<target ref="id10"/>
-			<label kind="synchronisation" x="-578" y="-280">leave[pid][src]?</label>
-			<label kind="assignment" x="-578" y="-263">cur_loc = src,
+			<label kind="select" x="-459" y="-187">temp_next_hop : ent_id_t</label>
+			<label kind="synchronisation" x="-459" y="-170">leave[pid][src][temp_next_hop]?</label>
+			<label kind="assignment" x="-459" y="-153">prev_hop = src,
+next_hop = temp_next_hop,
+type = 1,
 total = 0</label>
 		</transition>
 		<transition>
-			<source ref="id13"/>
-			<target ref="id12"/>
-			<label kind="synchronisation" x="-204" y="-544">appr[pid][getPort(cur_loc, dst)]!</label>
+			<source ref="id10"/>
+			<target ref="id9"/>
+			<label kind="synchronisation" x="-153" y="-561">appr[pid][dst][next_hop]!</label>
 		</transition>
 		<transition>
-			<source ref="id11"/>
-			<target ref="id13"/>
-			<label kind="guard" x="-255" y="-391">getPort(getPort(cur_loc, dst), dst) != dst</label>
-			<label kind="synchronisation" x="-255" y="-374">leave[pid][getPort(cur_loc, dst)]?</label>
-			<label kind="assignment" x="-255" y="-357">cur_loc = getPort(cur_loc, dst)</label>
+			<source ref="id8"/>
+			<target ref="id10"/>
+			<label kind="select" x="-187" y="-408">temp_prev_hop : ent_id_t,
+temp_next_hop : ent_id_t</label>
+			<label kind="guard" x="-229" y="-366">t &gt;= 1 &amp;&amp; temp_next_hop != dst</label>
+			<label kind="synchronisation" x="-323" y="-349">leave[pid][temp_prev_hop][temp_next_hop]?</label>
+			<label kind="assignment" x="-204" y="-332">prev_hop = temp_prev_hop,
+next_hop = temp_next_hop</label>
 		</transition>
 	</template>
 	<template>
 		<name>PingHost</name>
 		<parameter>const ent_id_t eid</parameter>
 		<declaration>clock t;</declaration>
-		<location id="id16" x="-833" y="68">
+		<location id="id13" x="-833" y="68">
 			<name x="-960" y="59">uninstantiated</name>
 			<label kind="invariant" x="-843" y="85">t &lt; 2</label>
 		</location>
-		<location id="id17" x="-501" y="68">
+		<location id="id14" x="-501" y="68">
 			<name x="-484" y="34">instantiated</name>
 			<label kind="invariant" x="-527" y="85">t &lt;= 50</label>
 		</location>
-		<location id="id18" x="-102" y="68">
+		<location id="id15" x="-102" y="68">
 			<name x="-111" y="34">acked</name>
 		</location>
-		<init ref="id16"/>
+		<init ref="id13"/>
 		<transition>
-			<source ref="id17"/>
-			<target ref="id16"/>
+			<source ref="id14"/>
+			<target ref="id13"/>
 			<label kind="guard" x="-789" y="-26">t&gt;=50</label>
 			<label kind="assignment" x="-789" y="8">t=0</label>
 			<nail x="-527" y="8"/>
 			<nail x="-807" y="8"/>
 		</transition>
 		<transition>
-			<source ref="id17"/>
-			<target ref="id18"/>
-			<label kind="synchronisation" x="-374" y="76">appr[2][eid]?</label>
+			<source ref="id14"/>
+			<target ref="id15"/>
+			<label kind="synchronisation" x="-374" y="76">leave[2][10][1]?</label>
 		</transition>
 		<transition>
-			<source ref="id16"/>
-			<target ref="id17"/>
+			<source ref="id13"/>
+			<target ref="id14"/>
 			<label kind="guard" x="-731" y="93">t &gt;= 1</label>
-			<label kind="synchronisation" x="-731" y="76">leave[1][eid]!</label>
+			<label kind="synchronisation" x="-731" y="76">leave[1][eid][10]!</label>
 			<label kind="assignment" x="-731" y="110">t = 0</label>
 		</transition>
 	</template>
 	<template>
 		<name>PongHost</name>
 		<parameter>const ent_id_t eid</parameter>
-		<location id="id19" x="0" y="0">
+		<location id="id16" x="0" y="0">
 		</location>
-		<location id="id20" x="153" y="0">
+		<location id="id17" x="153" y="0">
 			<committed/>
 		</location>
-		<init ref="id19"/>
+		<init ref="id16"/>
 		<transition>
-			<source ref="id20"/>
-			<target ref="id19"/>
-			<label kind="synchronisation" x="119" y="42">leave[2][eid]!</label>
+			<source ref="id17"/>
+			<target ref="id16"/>
+			<label kind="synchronisation" x="119" y="42">leave[2][4][13]!</label>
 			<nail x="68" y="68"/>
 		</transition>
 		<transition>
-			<source ref="id19"/>
-			<target ref="id20"/>
-			<label kind="synchronisation" x="25" y="-34">appr[1][eid]?</label>
+			<source ref="id16"/>
+			<target ref="id17"/>
+			<label kind="select" x="25" y="-51">pid : pkt_id_t</label>
+			<label kind="synchronisation" x="25" y="-34">leave[pid][13][eid]?</label>
 		</transition>
 	</template>
 	<system>L_1_20 = Link(10, 1, 20, 99, 1);
