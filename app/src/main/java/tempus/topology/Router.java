@@ -2,26 +2,30 @@ package tempus.topology;
 
 public class Router {
     private String name;
-    private int avgQDelay;
+    private int delayMin;
+    private int delayMax;
 
     public void setName(String name) {
         this.name = name;
     }
 
-    public void setAvgQDelay(int avgQDelay) {
-        this.avgQDelay = avgQDelay;
+    public void setDelayMin(int delayMin) {
+        this.delayMin = delayMin;
     }
 
-    // TODO: getters
+    public void setDelayMax(int delayMax) {
+        this.delayMax = delayMax;
+    }
+
     public String getName() {
         return name;
     }
 
-    public int getAvgQDelay() {
-        return avgQDelay;
+    public int getDelayMin() {
+        return delayMin;
     }
 
-    public void printDelay() {
-        System.out.println(this.avgQDelay);
+    public int getDelayMax() {
+        return delayMax;
     }
 }

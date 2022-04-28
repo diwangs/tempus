@@ -3,7 +3,9 @@ package tempus.topology;
 public class Link {
     private String u;
     private String v;
-    private int delay;
+    private int delayMin;
+    private int delayMax;
+    private int successOdds;
 
     public void setU(String u) {
         this.u = u;
@@ -13,8 +15,16 @@ public class Link {
         this.v = v;
     }
 
-    public void setDelay(int delay) {
-        this.delay = delay;
+    public void setDelayMin(int delayMin) {
+        this.delayMin = delayMin;
+    }
+
+    public void setDelayMax(int delayMax) {
+        this.delayMax = delayMax;
+    }
+
+    public void setSuccessOdds(int successOdds) {
+        this.successOdds = successOdds;
     }
 
     public String getU() {
@@ -25,8 +35,16 @@ public class Link {
         return v;
     }
 
-    public int getDelay() {
-        return delay;
+    public int getDelayMin() {
+        return delayMin;
+    }
+
+    public int getDelayMax() {
+        return delayMax;
+    }
+
+    public int getSuccessOdds() {
+        return successOdds;
     }
 
     public void printPair() {

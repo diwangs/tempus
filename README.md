@@ -17,5 +17,15 @@ Given network properties, compute the probability of a packet from node `X` reac
 - Download and extract UPPAAL (version 4.1.26-1)
 - Edit `uppaalRootPath` in `gradle.properties`
 - (Windows only?) Edit server path in `app/src/main/java/tempus/App.java$121` to adjust with your OS
-- Adjust the topology file in `config/test.json` accordingly (file name is hardcoded for now)
 - Run `./gradlew run`
+
+Adjust the topology file in `config/test.json` accordingly (file name is hardcoded for now)
+
+## Notes
+public enum LKind {
+    name, init, urgent, committed, invariant, exponentialrate, comments
+};
+
+public enum EKind {
+    select, guard, synchronisation, assignment, comments, probability
+};

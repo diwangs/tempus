@@ -51,9 +51,11 @@ public class Config {
             JSONObject intent = (JSONObject) jo.get("intent");
             JSONArray pathJSON = (JSONArray) intent.get("path");
             Iterator<String> pitr = pathJSON.iterator();
+            this.path.add("Tx");
             while(pitr.hasNext()) {
                 this.path.add(pitr.next());
             }
+            this.path.add("Rx");
             this.threshold = (Long) intent.get("threshold");
         } catch (Exception e) {
             e.printStackTrace();
