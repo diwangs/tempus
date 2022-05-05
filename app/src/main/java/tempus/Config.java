@@ -21,12 +21,13 @@ import com.fasterxml.jackson.databind.*;
 public class Config {
     private Set<Router> routers;
     private Set<Link> links;
-    private List<String> path = new LinkedList<String>();
+    private Set<List<String>> paths = new HashSet<List<String>>();
     private Long threshold;
+    private Double confidenceLevel;
     
-    public Config(String path) {
+    public Config(String filePath) {
         try {
-            JSONObject jo = (JSONObject) new JSONParser().parse(new FileReader(path));
+            JSONObject jo = (JSONObject) new JSONParser().parse(new FileReader(filePath));
             ObjectMapper mapper = new ObjectMapper();
 
             // Read the routers
@@ -49,14 +50,25 @@ public class Config {
 
             // Read properties, assume connectivity
             JSONObject intent = (JSONObject) jo.get("intent");
-            JSONArray pathJSON = (JSONArray) intent.get("path");
-            Iterator<String> pitr = pathJSON.iterator();
-            this.path.add("Tx");
-            while(pitr.hasNext()) {
-                this.path.add(pitr.next());
-            }
-            this.path.add("Rx");
             this.threshold = (Long) intent.get("threshold");
+
+            // Read possible paths
+            JSONArray pathsJSON = (JSONArray) intent.get("paths");
+            Iterator psitr = pathsJSON.iterator();
+            while (psitr.hasNext()) {
+                JSONArray pathJSON = (JSONArray) psitr.next();
+                Iterator<String> pitr = pathJSON.iterator();
+                List<String> path = new LinkedList<String>();
+                path.add("Tx");
+                while(pitr.hasNext()) {
+                    path.add(pitr.next());
+                }
+                path.add("Rx");
+                this.paths.add(path);
+            }
+
+            // Read "hyperparameter"
+            this.confidenceLevel = (Double) jo.get("confidenceLevel");
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -70,11 +82,15 @@ public class Config {
         return links;
     }
 
-    public List<String> getPath() {
-        return path;
+    public Set<List<String>> getPaths() {
+        return paths;
     }
 
     public Long getThreshold() {
         return threshold;
+    }
+
+    public Double getConfidenceLevel() {
+        return confidenceLevel;
     }
 }

@@ -8,9 +8,17 @@
     "links": [
         {"u": "Tx", "v": "S1", "delayMin": 1, "delayMax": 1, "successOdds": 4},
         {"u": "S1", "v": "S2", "delayMin": 3, "delayMax": 3, "successOdds": 4},
+        {"u": "S4", "v": "Tx", "delayMin": 100, "delayMax": 100, "successOdds": 4},
         {"u": "S3", "v": "S2", "delayMin": 5, "delayMax": 5, "successOdds": 4},
-        {"u": "S4", "v": "S3", "delayMin": 100, "delayMax": 100, "successOdds": 4},
+        {"u": "S4", "v": "Rx", "delayMin": 100, "delayMax": 100, "successOdds": 4},
         {"u": "Rx", "v": "S3", "delayMin": 7, "delayMax": 7, "successOdds": 4}
     ],
-    "intent": {"path": ["S1", "S2", "S3"], "threshold": 28}
+    "intent": {
+        "paths": [
+            ["S1", "S2", "S3"],
+            ["S4"]
+        ], 
+        "threshold": 28
+    },
+    "confidenceLevel": 0.995
 }
